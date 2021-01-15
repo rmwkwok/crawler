@@ -12,7 +12,7 @@ python3 run_crawler.py --help
 Option examples:
 ```
 positional arguments:
-  SEED_TARGETS_LIST     Default: ./seed_targets_list.txt
+  SEED_TARGETS_LIST     Example: ./seed_targets_list.txt
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -30,8 +30,8 @@ optional arguments:
                         Default: 100000
   --storage_size_limit_mb STORAGE_SIZE_LIMIT_MB
                         Default: 300
-  --url_allowed_domain URL_ALLOWED_DOMAIN
-                        Default: ['en.wikipedia.org']
+  --url_allowed_domain URL_ALLOWED_DOMAIN [URL_ALLOWED_DOMAIN ...]
+                        Default: en.wikipedia.org
   --url_max_depth URL_MAX_DEPTH
                         Default: 50
   --url_max_length URL_MAX_LENGTH
@@ -40,12 +40,13 @@ optional arguments:
                         Default: 50
   --url_pattern URL_PATTERN
                         Default: https?://.*\..*/?.*
-  --url_retry_http_codes URL_RETRY_HTTP_CODES
-                        Default: [500, 502, 503, 504, 522, 524, 408, 429]
+  --url_retry_http_codes URL_RETRY_HTTP_CODES [URL_RETRY_HTTP_CODES ...]
+                        Default: 500 502 503 504 522 524 408 429
   --url_retry_limit URL_RETRY_LIMIT
                         Default: 4
   --url_retry_wait_second URL_RETRY_WAIT_SECOND
                         Default: 60
+
 
 ```
 

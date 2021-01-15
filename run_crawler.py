@@ -1,7 +1,6 @@
 import time
 import argparse
 from crawler.config import Config as config
-from crawler.util import argparse_kwargs
 
 from crawler.Logger import logger
 from crawler.DocMgr import DocMgr
@@ -18,11 +17,19 @@ def main():
     parser = argparse.ArgumentParser()
     for name in dir(config):
         if not name.startswith("__"):
-            kwargs = argparse_kwargs(name, vars(config)[name])
-            if name in req_args :
-                parser.add_argument(name, **kwargs)
+            value = getattr(config, name)
+            _type = type(value)
+            if _type is list:
+                help = ' '.join(map(str, value))
+                kwargs = {'type': type(value[0]), 'nargs': '+'}
             else:
-                parser.add_argument('--'+name.lower(), **dict(kwargs, dest=name))
+                help = str(value)
+                kwargs = {'type': _type}
+            
+            if name in req_args :
+                parser.add_argument(name, **dict(kwargs, help='Example: '+help))
+            else:
+                parser.add_argument('--'+name.lower(), **dict(kwargs, dest=name, help='Default: '+help))
 
     # retrieve arguments
     args = parser.parse_args()

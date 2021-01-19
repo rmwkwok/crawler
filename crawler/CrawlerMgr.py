@@ -1,6 +1,5 @@
 import time
 from . import constants
-from .Logger import logger
 from .constants import CrawlResult
 from datetime import datetime as dt
 from urllib.error import HTTPError, URLError
@@ -9,7 +8,7 @@ from multiprocessing import Process, Manager, Queue
 
 STOPCRAWLER = 'STOPCRAWLER'
 
-def crawler(queue, documents):
+def crawler(queue, documents, logger):
     while True:
         item = queue.get()
         if item == STOPCRAWLER:
@@ -32,8 +31,9 @@ def crawler(queue, documents):
             documents[url_id] = doc
 
 class CrawlerMgr:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self._config = config
+        self._logger = logger
         self._manager = Manager()
         self._crawlers = []
         self._queue = Queue()
@@ -45,7 +45,7 @@ class CrawlerMgr:
         
     def start_crawler(self):
         while len(self._crawlers) < self._config.MAX_NUMBER_OF_CRAWLERS:
-            self._crawlers.append(Process(target=crawler, args=(self._queue, self._documents)))
+            self._crawlers.append(Process(target=crawler, args=(self._queue, self._documents, self._logger)))
             self._crawlers[-1].start()
             
     def stop_crawler(self):
@@ -53,7 +53,7 @@ class CrawlerMgr:
             try:
                 self._queue.get(False)
             except:
-                logger.add(constants.INFO, ':Queue emptied')
+                self._logger.add(constants.INFO, ':Queue emptied')
                 time.sleep(.1)
         
         while len(self._crawlers) > 0:

@@ -13,12 +13,13 @@ def log_level(args):
         return ShowLogLevel.ALL
 
 class Logger:
-    def __init__(self):
+    def __init__(self, config):
         self._logger_is_set = False
         self._manager = Manager()
         self._buffer = self._manager.list()
         self._start_dt = dt.now()
         self._last_save_time = self._start_dt
+        self.set_config(config)
             
     def set_config(self, config):
         self._config = config
@@ -52,5 +53,3 @@ class Logger:
     @property
     def start_dt(self):
         return self._start_dt
-
-logger = Logger()

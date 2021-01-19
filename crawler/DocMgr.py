@@ -1,14 +1,14 @@
 import os
 import json
 from . import constants
-from .Logger import logger
 from bs4 import BeautifulSoup
 from datetime import datetime as dt
 from urllib.parse import urljoin
 
 class DocMgr:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self._config = config
+        self._logger = logger
         self.create_storage_folder()
         self.init_storage_status()
         self.get_storage_status()
@@ -16,10 +16,10 @@ class DocMgr:
     @property
     def is_storage_available(self):
         if self._files_size >= self._config.STORAGE_SIZE_LIMIT_MB:
-            logger.add(constants.INFO, 'Storage size full')
+            self._logger.add(constants.INFO, 'Storage size full')
             return False
         elif self._num_file >= self._config.STORAGE_NUM_DOC_LIMIT:
-            logger.add(constants.INFO, 'Storage file number full')
+            self._logger.add(constants.INFO, 'Storage file number full')
             return False
         else:
             return True
@@ -46,7 +46,7 @@ class DocMgr:
         self._files_size = sum(file_sizes)/1024/1024
         
     def get_storage_status(self):
-        logger.add(constants.INFO, 'Storage', self._num_file, 'files of', self._files_size, 'MB')
+        self._logger.add(constants.INFO, 'Storage', self._num_file, 'files of', self._files_size, 'MB')
         
     def update_storage_status(self, file_path):
         self._num_file += 1
@@ -56,8 +56,8 @@ class DocMgr:
         try:
             document = str(BeautifulSoup(document, features='lxml'))
         except:
-            logger.add(constants.FATAL, url.url_str, ':Unknown doc format')
-            logger.add(str(document))
+            self._logger.add(constants.FATAL, url.url_str, ':Unknown doc format')
+            self._logger.add(str(document))
             
         creation_time = dt.now()
         file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
@@ -85,5 +85,5 @@ class DocMgr:
                 if a.get('href'):
                     yield urljoin(url.url_str, a.get('href')), a.text
         except Exception as e:
-            logger.add(constants.WARNING, url.url_str, ':Exception %s'%e)
+            self._logger.add(constants.WARNING, url.url_str, ':Exception %s'%e)
             

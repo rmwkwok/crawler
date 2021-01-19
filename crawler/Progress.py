@@ -1,14 +1,14 @@
-from .Logger import logger
 from .constants import ShowLogLevel
 from datetime import datetime as dt
 
 class Progress:
-    def __init__(self, config, url_mgr, doc_mgr, crawler_mgr):
+    def __init__(self, config, logger, url_mgr, doc_mgr, crawler_mgr):
         self._config = config
+        self._logger = logger
         self._url_mgr = url_mgr
         self._doc_mgr = doc_mgr
         self._crawler_mgr = crawler_mgr
-        self._start_dt = logger.start_dt
+        self._start_dt = self._logger.start_dt
         self._last_print_time = self._start_dt
         self._can_print = self._config.LOG_SHOW_LOG_LEVEL == ShowLogLevel.NONE
         

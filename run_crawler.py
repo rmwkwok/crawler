@@ -2,7 +2,7 @@ import time
 import argparse
 from crawler.config import Config as config
 
-from crawler.Logger import logger
+from crawler.Logger import Logger
 from crawler.DocMgr import DocMgr
 from crawler.URLMgr import URLMgr
 from crawler.Progress import Progress
@@ -39,11 +39,11 @@ def main():
             setattr(config, name, value)
             
     # build objects
-    logger.set_config(config)
-    url_mgr = URLMgr(config)
-    doc_mgr = DocMgr(config)
-    crawler_mgr = CrawlerMgr(config)
-    progress = Progress(config, url_mgr, doc_mgr, crawler_mgr)
+    logger = Logger(config)
+    url_mgr = URLMgr(config, logger)
+    doc_mgr = DocMgr(config, logger)
+    crawler_mgr = CrawlerMgr(config, logger)
+    progress = Progress(config, logger, url_mgr, doc_mgr, crawler_mgr)
 
     # add seed urls
     with open(config.SEED_TARGETS_LIST, 'r') as f:

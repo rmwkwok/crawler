@@ -1,8 +1,10 @@
 import os
+
 from . import constants
+from .util import MultiProcesser, queuer, dequeue_once
 from .constants import ShowLogLevel
+
 from datetime import datetime as dt
-from multiprocessing import Manager
 
 def log_level(args):
     if constants.FATAL in args:
@@ -12,45 +14,41 @@ def log_level(args):
     else:
         return ShowLogLevel.ALL
 
-class Logger:
-    def __init__(self):
-        self._logger_is_set = False
-        self._manager = Manager()
-        self._buffer = self._manager.list()
+def format_log(*args):
+    return dt.now().strftime('%Y-%m-%d %H:%M:%S ') + ' '.join(list(map(str, args)))
+    
+class Logger(MultiProcesser):
+    def __init__(self, config):
+        super().__init__('Logger')
+        self._config = config
+        self._buffer = list()
+        
         self._start_dt = dt.now()
         self._last_save_time = self._start_dt
-            
-    def set_config(self, config):
-        self._config = config
+        
         self._log_file = os.path.join(self._config.LOG_FOLDER, 'log_%d'%dt.timestamp(self._start_dt))
         os.makedirs(self._config.LOG_FOLDER, exist_ok=True)
-        
         if not os.path.exists(self._log_file):
             with open(self._log_file, 'w') as f:
                 pass
         
-        self._logger_is_set = True
-            
     def add(self, *args):
-        message = dt.now().strftime('%Y-%m-%d %H:%M:%S ') + ' '.join(list(map(str, args)))
-        
-        if log_level(args) >= self._config.LOG_SHOW_LOG_LEVEL:
-            print(message)
-            
-        self._buffer.append(message)
+        queuer(self._qcount, self._queue, self._name, format_log(*args))
         
     def save_to_disk(self, force=False):
+        for _ in range(self._qcount.value):
+            message = dequeue_once(self._qcount, self._queue, self._name)
+            if message is not None:
+                self._buffer.append(message)
+                if log_level(message) >= self._config.LOG_SHOW_LOG_LEVEL:
+                    print(message)
+        
         if force or ((dt.now() - self._last_save_time).seconds >= self._config.LOG_SAVE_EVERY_SECOND):
             with open(self._log_file, 'a') as f:
-                while self.is_buffer_filled:
-                    f.write(self._buffer.pop(0)+'\n')
-        
-    @property
-    def is_buffer_filled(self):
-        return len(self._buffer)
-    
+                f.write('\n'.join(self._buffer)+'\n')
+                self._buffer.clear()
+                self._last_save_time = dt.now()
+                    
     @property
     def start_dt(self):
         return self._start_dt
-
-logger = Logger()

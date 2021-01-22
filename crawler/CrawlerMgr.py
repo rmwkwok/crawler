@@ -1,93 +1,55 @@
-import time
 from . import constants
-from .Logger import logger
-from .constants import CrawlResult
+from .util import MultiProcesser, dequeuer, queuer
+from .Logger import format_log
+from .constants import CrawlResult as CR
+
 from datetime import datetime as dt
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
-from multiprocessing import Process, Manager, Queue
 
-STOPCRAWLER = 'STOPCRAWLER'
-
-def crawler(queue, documents):
-    while True:
-        item = queue.get()
-        if item == STOPCRAWLER:
-            logger.add(constants.INFO, ':Crawler stopped')
-            return
-        else:
-            url_id, url = item
+def crawler(qcount, queue, pid, doc_queue, doc_qcount, log_queue, log_qcount, URL_RETRY_HTTP_CODES):
+    for url in dequeuer(qcount, queue, pid):
+        try:
             start_time = dt.now()
-            req = Request(url=url.url_str) 
-            try:
-                doc = urlopen(req).read() 
-                logger.add(constants.INFO, url.url_str, ':Crawler done in %d seconds'%(dt.now() - start_time).seconds)
-            except HTTPError as e:
-                doc = int(e.code)
-                logger.add(constants.INFO, url.url_str, ':Crawler failed: %s'%e)
-            except Exception as e:
-                doc = None
-                logger.add(constants.INFO, url.url_str, ':Crawler failed: %s'%e)
+            doc = urlopen(Request(url=url.url_str)).read()
 
-            documents[url_id] = doc
+        except HTTPError as e:
+            result = CR.NEED_RETRY if int(e.code) in URL_RETRY_HTTP_CODES else CR.NO_RETRY
+            queuer(doc_qcount, doc_queue, pid, (result, url, None))
+            queuer(log_qcount, log_queue, pid, format_log(constants.INFO, url.url_str, 'Crawler failed: %s'%e))
 
-class CrawlerMgr:
-    def __init__(self, config):
-        self._config = config
-        self._manager = Manager()
-        self._crawlers = []
-        self._queue = Queue()
-        self._input = dict()
-        self._documents = self._manager.dict()
+        except Exception as e:
+            queuer(doc_qcount, doc_queue, pid, (CR.NO_RETRY, url, None))
+            queuer(log_qcount, log_queue, pid, format_log(constants.INFO, url.url_str, 'Crawler failed: %s'%e))
 
-    def check_crawlers(self):
-        self._crawlers = [p for p in self._crawlers if p.is_alive()]
-        
-    def start_crawler(self):
-        while len(self._crawlers) < self._config.MAX_NUMBER_OF_CRAWLERS:
-            self._crawlers.append(Process(target=crawler, args=(self._queue, self._documents)))
-            self._crawlers[-1].start()
+        else:
+            queuer(doc_qcount, doc_queue, pid, (CR.SUCCESS, url, doc))
+            queuer(log_qcount, log_queue, pid, format_log(constants.INFO, url.url_str, 'Crawler done in %d seconds'%(dt.now() - start_time).seconds))
+
+    queuer(log_qcount, log_queue, pid, format_log(constants.INFO, 'Crawler stopped'))
             
-    def stop_crawler(self):
-        while self._queue.qsize():
-            try:
-                self._queue.get(False)
-            except:
-                logger.add(constants.INFO, ':Queue emptied')
-                time.sleep(.1)
+class CrawlerMgr(MultiProcesser):
+    def __init__(self, config, logger, doc_mgr):
+        super().__init__('CrawlerMgr')
+        self._config = config
+        self._logger = logger
+        self._doc_mgr = doc_mgr
         
-        while len(self._crawlers) > 0:
-            self._queue.put(STOPCRAWLER)
-            time.sleep(.5)
-            self.check_crawlers()
+    def start_crawlers(self):
+        while len(self._processes) < self._config.MAX_NUMBER_OF_CRAWLERS:
+            self._start_a_process(target=crawler,
+                                  kwargs=dict(
+                                      log_queue=self._logger.queue,
+                                      log_qcount=self._logger.qcount,
+                                      doc_queue=self._doc_mgr.queue,
+                                      doc_qcount=self._doc_mgr.qcount,
+                                      URL_RETRY_HTTP_CODES=self._config.URL_RETRY_HTTP_CODES,
+                                      ))
+            
+    def stop_crawlers(self):
+        self._stop_all_processes()
     
     def add_to_queue(self, url):
-        self._input[id(url)] = url
-        self._queue.put((id(url), url))
+        self._add_to_queue(url)
         
-    def get_crawl_result(self, x):
-        if isinstance(x, int):
-            if x in self._config.URL_RETRY_HTTP_CODES:
-                return CrawlResult.NEED_RETRY
-            else:
-                return CrawlResult.NO_RETRY
-        else:
-            return CrawlResult.SUCCESS
-        
-    def get_crawled(self):
-        try:
-            key, doc = self._documents.popitem()
-        except:
-            return CrawlResult.NO_RESULT, None, None
-        else:
-            url = self._input.pop(key)
-            return self.get_crawl_result(doc), url, doc
-    
-    @property
-    def num_being_crawled(self):
-        return len(self._input)
-    
-    @property
-    def num_active_crawlers(self):
-        self.check_crawlers()
-        return len(self._crawlers)
+

@@ -3,24 +3,34 @@ import xml
 import json
 
 from . import constants
-from .util import MultiProcesser, dequeuer, queuer
+from .util import MultiProcesser, Q, dequeuer, queuer, dequeue_once, queue_flusher
 from .Logger import format_log
 from .constants import CrawlResult as CR
 
 from bs4 import BeautifulSoup
 from ctypes import c_int64, c_longdouble
 from datetime import datetime as dt
-from urllib.parse import urljoin
-from multiprocessing import Queue, Value
+from urllib.parse import urljoin, urldefrag
+from multiprocessing import Value, Manager
 
-def doc_parser(qcount, queue, pid, output_q, log_queue, log_qcount, num_file, files_size, STORAGE_FOLDER):
-    for result, url, doc in dequeuer(qcount, queue, pid):
+def doc_parser(
+    qcount, queue, pid, active,
+    output_queue, output_qcount, 
+    log_queue, log_qcount, 
+    num_file, files_size, 
+    seen_url_str, STORAGE_FOLDER,
+):
+    doc_q = (qcount, queue, pid)
+    log_q = (log_qcount, log_queue, pid)
+    doc_output_q = (output_qcount, output_queue, pid + 'DocMgrOutput')
+    
+    for result, url, doc in dequeuer(*doc_q, active):
         if result == CR.SUCCESS:
             try:
                 doc = BeautifulSoup(doc, features='lxml')
 
             except Exception as e:
-                queuer(log_qcount, log_queue, pid, format_log(constants.WARNING, url.url_str, ':%s'%e))
+                queuer(*log_q, format_log(constants.WARNING, url.url_str, ':%s'%e))
                 continue
 
             else:
@@ -44,17 +54,20 @@ def doc_parser(qcount, queue, pid, output_q, log_queue, log_qcount, num_file, fi
                 # extract links
                 for a in doc.find_all('a'):
                     if a.get('href'):
-                        output_q.put((
-                            CR.SUCCESS, 
-                            url, 
-                            urljoin(url.url_str, a.get('href')),
-                            a.text, 
-                        ))
+                        url_str = urldefrag(urljoin(url.url_str, a.get('href'))).url
+                        if url_str not in seen_url_str:
+                            seen_url_str[url_str] = None
+                            queuer(*doc_output_q, (
+                                CR.SUCCESS, 
+                                url, 
+                                url_str,
+                                a.text, 
+                            ))
         else:
-            output_q.put((result, url, None, None))
+            queuer(*doc_output_q, (result, url, None, None))
 
-    queuer(log_qcount, log_queue, pid, format_log(constants.INFO, 'Doc Parser stopped'))
-    output_q.cancel_join_thread()
+    queue_flusher(*doc_output_q)
+    queuer(*log_q, format_log(constants.INFO, 'Doc Parser stopped'))
 
 def update_storage_status(num_file, files_size, file_path):
     with num_file.get_lock():
@@ -80,7 +93,9 @@ class DocMgr(MultiProcesser):
         super().__init__('DocMgr')
         self._config = config
         self._logger = logger
-        self._output_q = Queue()
+        self._manager = Manager()
+        self._seen_url_str = self._manager.dict()
+        self._output_q = Q('DocMgrOutput')
         self._num_file = Value(c_int64, 0)
         self._files_size = Value(c_longdouble, 0.)
         
@@ -94,9 +109,11 @@ class DocMgr(MultiProcesser):
                                   kwargs=dict(
                                       num_file=self._num_file, 
                                       files_size=self._files_size,
-                                      output_q=self._output_q,
+                                      output_queue=self._output_q.queue,
+                                      output_qcount=self._output_q.qcount,
                                       log_queue=self._logger.queue,
                                       log_qcount=self._logger.qcount,
+                                      seen_url_str=self._seen_url_str,
                                       STORAGE_FOLDER=self._config.STORAGE_FOLDER,
                                       ))
 
@@ -105,10 +122,11 @@ class DocMgr(MultiProcesser):
         
     def get_parsed(self, n):
         while n>0:
-            try:
-                yield self._output_q.get_nowait()
+            obj = dequeue_once(self._output_q.qcount, self._output_q.queue, self._output_q._name)
+            if obj is not None:
+                yield obj
                 n -= 1
-            except:
+            else:
                 return
     
     def get_storage_status(self):

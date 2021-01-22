@@ -1,3 +1,4 @@
+import time
 import json
 import argparse
 
@@ -68,13 +69,16 @@ def main():
                 url_mgr.deactive_url(url)
         
         logger.save_to_disk()
-
-    # end crawling
-    crawler_mgr.stop_crawlers()
-    doc_mgr.stop_doc_parsers()
     progress.print(force=True)
-    logger.save_to_disk(force=True)
     print('\n')
+    
+    # end crawling
+    doc_mgr.stop_doc_parsers()
+    crawler_mgr.stop_crawlers()
+    while doc_mgr.num_running_process or crawler_mgr.num_running_process:
+        time.sleep(.5)
+        
+    logger.save_to_disk(force=True)
     
 if __name__ == '__main__':
     main()

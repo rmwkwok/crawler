@@ -1,7 +1,7 @@
 import os
 
 from . import constants
-from .util import MultiProcesser, queuer, dequeue_once
+from .util import Q, queuer, dequeue_once
 from .constants import ShowLogLevel
 
 from datetime import datetime as dt
@@ -17,7 +17,7 @@ def log_level(args):
 def format_log(*args):
     return dt.now().strftime('%Y-%m-%d %H:%M:%S ') + ' '.join(list(map(str, args)))
     
-class Logger(MultiProcesser):
+class Logger(Q):
     def __init__(self, config):
         super().__init__('Logger')
         self._config = config

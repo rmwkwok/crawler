@@ -4,7 +4,7 @@ from . import constants
 from .URL import URL
 from .util import get_domain_from_url
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urldefrag
 from urllib.robotparser import RobotFileParser
 
 class URLMgr:
@@ -87,7 +87,10 @@ class URLMgr:
         
     def set(self, url_str_or_URL, anchor_text=None, parent_URL=None):
         if isinstance(url_str_or_URL, str):
-            url_str = url_str_or_URL
+            url_str = urldefrag(url_str_or_URL).url
+            if url_str != url_str_or_URL:
+                self._logger.add(constants.WARNING, url_str, ':Defragged from', url_str_or_URL)
+            
             idx = len(self._urls)
             url = URL(url_str, idx, anchor_text, parent_URL)
             

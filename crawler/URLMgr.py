@@ -1,12 +1,14 @@
 import re
+
 from . import constants
 from .URL import URL
 from .util import get_domain_from_url
+
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 
 class URLMgr:
-    def __init__(self, config, logger, url_strs=[]):
+    def __init__(self, config, logger):
         self._config = config
         self._logger = logger
         self._urls = list()
@@ -14,10 +16,8 @@ class URLMgr:
         self._robots = dict()
         self._idxs_set = set()
         self._url_strs_set = set()
+        self._active_idxs_set = set()
         
-        for url_str in url_strs:
-            self.set(url_str)
-            
     def check_is_url_str_valid(self, url_str):
         parsed = urlparse(url_str)
         
@@ -91,13 +91,14 @@ class URLMgr:
             idx = len(self._urls)
             url = URL(url_str, idx, anchor_text, parent_URL)
             
-            if self.check_is_url_str_valid(url_str)\
+            if self.check_is_new_url_str(url_str)\
                 and self.check_is_valid_domain(url_str)\
-                and self.check_is_new_url_str(url_str)\
+                and self.check_is_url_str_valid(url_str)\
                 and self.check_robot_can_fetch(url_str)\
                 and self.check_is_URL_valid(url):
                 self._idxs.append(idx)
                 self._idxs_set.add(idx)
+                self._active_idxs_set.add(idx)
                 self._urls.append(url)
                 self._url_strs_set.add(url_str)
                 self._logger.add(constants.INFO, url_str, ':URL added to queue')
@@ -106,8 +107,8 @@ class URLMgr:
             url = url_str_or_URL
             idx = url.idx
             url.failed_once()
-            if self.check_is_URL_valid(url)\
-                and self.check_is_new_url(url):
+            if self.check_is_new_url(url)\
+                and self.check_is_URL_valid(url):
                 self._idxs.append(idx)
                 self._idxs_set.add(idx)
                 self._idxs = sorted(self._idxs)
@@ -123,7 +124,14 @@ class URLMgr:
                 self._idxs.remove(idx)
                 self._idxs_set.remove(idx)
                 yield url
-    
+                
+    def deactive_url(self, url):
+        self._active_idxs_set.remove(url.idx)
+                
     @property
     def num_URLs(self):
         return len(self._idxs)
+
+    @property
+    def num_active_URLs(self):
+        return len(self._active_idxs_set)

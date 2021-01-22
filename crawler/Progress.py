@@ -1,4 +1,5 @@
 from .constants import ShowLogLevel
+
 from datetime import datetime as dt
 
 class Progress:
@@ -14,9 +15,7 @@ class Progress:
         
     @property
     def active(self):
-        return (self._url_mgr.num_URLs\
-                or self._crawler_mgr.num_being_crawled)\
-                and self._doc_mgr.is_storage_available
+        return self._url_mgr.num_active_URLs and self._doc_mgr.is_storage_available
     
         
     def print(self, force=False):
@@ -24,17 +23,31 @@ class Progress:
             delta_time = dt.now() - self._start_dt
             crawl_fmt = '{: >%dd}'%(1+int(self._config.MAX_NUMBER_OF_CRAWLERS/10))
             crawl_fmt = 'Crawler:{crawl_fmt}/{crawl_fmt}'.format(crawl_fmt=crawl_fmt)
-            message = ['{}d{: >5d}s'.format(delta_time.days, delta_time.seconds),
-                       'URL:{: >3d}|{: >3d}'.format(self._url_mgr.num_URLs,
-                                                    self._crawler_mgr.num_being_crawled),
+            doc_parser_fmt = '{: >%dd}'%(1+int(self._config.MAX_NUMBER_OF_DOC_PARSERS/10))
+            doc_parser_fmt = 'DocParser:{doc_parser_fmt}/{doc_parser_fmt}'.format(doc_parser_fmt=doc_parser_fmt)
+            message = ['{}d{: >5d}s'.format(
+                           delta_time.days, 
+                           delta_time.seconds,
+                           ),
+                       'URL:{: >3d}|{: >3d}|{: >3d}'.format(
+                           self._url_mgr.num_URLs,
+                           self._crawler_mgr.get_queue_size,
+                           self._doc_mgr.get_queue_size,
+                           ),
                        crawl_fmt.format(
-                           self._crawler_mgr.num_active_crawlers, 
-                           self._config.MAX_NUMBER_OF_CRAWLERS),
+                           self._crawler_mgr.num_active_processes, 
+                           self._config.MAX_NUMBER_OF_CRAWLERS,
+                           ),
+                       doc_parser_fmt.format(
+                           self._doc_mgr.num_active_processes, 
+                           self._config.MAX_NUMBER_OF_DOC_PARSERS,
+                           ),
                        'File:{: >6.1f}MB({: >3.1f}%)|{: >6d}({: >3.1f}%)'.format(
                            self._doc_mgr.files_size, 
                            self._doc_mgr.files_size/self._config.STORAGE_SIZE_LIMIT_MB*100, 
                            self._doc_mgr.num_file,
-                           self._doc_mgr.num_file/self._config.STORAGE_NUM_DOC_LIMIT*100),
+                           self._doc_mgr.num_file/self._config.STORAGE_NUM_DOC_LIMIT*100,
+                           ),
                        '          ',
                       ]
             print(' '.join(message), end='\r')

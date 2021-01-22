@@ -1,12 +1,12 @@
-import time
+import json
 import argparse
-from crawler.config import Config as config
 
+from crawler.config import Config as config
 from crawler.Logger import Logger
 from crawler.DocMgr import DocMgr
 from crawler.URLMgr import URLMgr
 from crawler.Progress import Progress
-from crawler.constants import CrawlResult
+from crawler.constants import CrawlResult as CR
 from crawler.CrawlerMgr import CrawlerMgr
 
 def main():
@@ -42,7 +42,7 @@ def main():
     logger = Logger(config)
     url_mgr = URLMgr(config, logger)
     doc_mgr = DocMgr(config, logger)
-    crawler_mgr = CrawlerMgr(config, logger)
+    crawler_mgr = CrawlerMgr(config, logger, doc_mgr)
     progress = Progress(config, logger, url_mgr, doc_mgr, crawler_mgr)
 
     # add seed urls
@@ -51,30 +51,28 @@ def main():
             url_mgr.set(url_str)
     
     # start crawling
-    crawler_mgr.start_crawler()
+    doc_mgr.start_doc_parsers()
+    crawler_mgr.start_crawlers()
     while progress.active:
         progress.print()
 
         for url in url_mgr.get():
             crawler_mgr.add_to_queue(url)
 
-        crawl_result, url, doc = crawler_mgr.get_crawled()
-
-        if crawl_result == CrawlResult.NEED_RETRY:
-            url_mgr.set(url)
-        elif crawl_result == CrawlResult.SUCCESS:
-            doc_mgr.new_doc(url, doc)
-            for url_str, anchor_text in doc_mgr.extract_links(url, doc):
-                progress.print()
+        for result, url, url_str, anchor_text in doc_mgr.get_parsed(n=300):
+            if result == CR.SUCCESS:
                 url_mgr.set(url_str, anchor_text, parent_URL=url)
-        else:
-            time.sleep(1)
-
+            elif result == CR.NEED_RETRY:
+                url_mgr.set(url)
+            else:
+                url_mgr.deactive_url(url)
+        
         logger.save_to_disk()
 
     # end crawling
+    crawler_mgr.stop_crawlers()
+    doc_mgr.stop_doc_parsers()
     progress.print(force=True)
-    crawler_mgr.stop_crawler()
     logger.save_to_disk(force=True)
     print('\n')
     

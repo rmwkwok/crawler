@@ -11,6 +11,7 @@ class Config:
     URL_ALLOWED_DOMAIN = ['en.wikipedia.org']
 
     MAX_NUMBER_OF_CRAWLERS = 8
+    MAX_NUMBER_OF_DOC_PARSERS = 8
 
     STORAGE_FOLDER = './storage'
     STORAGE_SIZE_LIMIT_MB = 300

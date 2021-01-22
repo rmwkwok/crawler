@@ -1,4 +1,5 @@
 from .util import get_domain_from_url
+
 from datetime import datetime as dt
 
 class URL:

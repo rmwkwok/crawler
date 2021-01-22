@@ -2,7 +2,7 @@ import time
 import json
 import argparse
 
-from crawler.config import Config as config
+from crawler.config import config_desc, Config as config
 from crawler.Logger import Logger
 from crawler.DocMgr import DocMgr
 from crawler.URLMgr import URLMgr
@@ -20,17 +20,19 @@ def main():
         if not name.startswith("__"):
             value = getattr(config, name)
             _type = type(value)
+            help_text = config_desc[name]
+            
             if _type is list:
-                help = ' '.join(map(str, value))
+                default = ' '.join(map(str, value))
                 kwargs = {'type': type(value[0]), 'nargs': '+'}
             else:
-                help = str(value)
+                default = str(value)
                 kwargs = {'type': _type}
             
             if name in req_args :
-                parser.add_argument(name, **dict(kwargs, help='Example: '+help))
+                parser.add_argument(name, **dict(kwargs, help='%s (Example: %s)'%(help_text, default)))
             else:
-                parser.add_argument('--'+name.lower(), **dict(kwargs, dest=name, help='Default: '+help))
+                parser.add_argument('--'+name.lower(), **dict(kwargs, dest=name, help='%s (Default: %s)'%(help_text, default)))
 
     # retrieve arguments
     args = parser.parse_args()

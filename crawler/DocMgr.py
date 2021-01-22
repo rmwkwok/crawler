@@ -38,14 +38,15 @@ def doc_parser(
                 creation_time = dt.now()
                 file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
                 file_path = os.path.join(STORAGE_FOLDER, file_name)
+                
                 with open(file_path, 'w') as f:
                     f.write(json.dumps({
                         'metadata': {
                             'url': url.url_str,
-                            'anchor_text': url.anchor_text,
                             'url_depth': url.depth,
+                            'anchor_text': url.anchor_text,
                             'creation_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'num_retry': url.num_retry,
+                            'title': ','.join(x.text for x in doc.findAll('title')),
                         },
                         'document': str(doc),
                     }))

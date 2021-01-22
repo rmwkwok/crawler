@@ -61,7 +61,7 @@ optional arguments:
 ```
 
 ### Brief descriptions of behavior
-- Starts N=```MAX_NUMBER_OF_CRAWLERS``` parallel-running crawlers
+- Starts N=```MAX_NUMBER_OF_CRAWLERS``` parallel-running crawlers, and N=```MAX_NUMBER_OF_DOC_PARSERS``` parallel-running document parsers
 - Put URLs in ```SEED_TARGETS_LIST``` into crawlers' queue, followed by extracted links from crawled documents
 - Crawlers process the URLs in FIFO manner
 - When ```LOG_SHOW_LOG_LEVEL```=3, it shows a progress bar like this:
@@ -83,8 +83,15 @@ optional arguments:
 - a log file under ```LOG_FOLDER```
 - crawled docs under ```STORAGE_FOLDER```
 - a crawled doc is a json of the following format:
-```                
-{'metadata': {'url', 'anchor_text', 'url_depth', 'creation_time', 'num_retry'},
- 'document': document,
+```
+{
+    "metadata": {
+        "url": "https://en.wikipedia.org/wiki/Structured_prediction", 
+        "url_depth": 1, 
+        "anchor_text": "Structured prediction", 
+        "creation_time": "2021-01-22 15:17:49", 
+        "title": "Structured prediction - Wikipedia"
+        }, 
+    "document": '''<!DOCTYPE html>\n<html class=\"client-nojs\" dir=\"ltr\" lang=\"en\">\n<head>\n ...''',
 }
-               ```
+```

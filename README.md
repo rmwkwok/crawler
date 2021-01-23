@@ -110,6 +110,6 @@ optional arguments:
     "Headers.Age": "1146", 
     "Headers.Last-Modified": "Sat, 23 Jan 2021 01:41:51 GMT", 
     "Headers.Content-Length": "48350", 
-    "Headers": {...}, 
+    "Headers.Content-Type": "text/html; charset=UTF-8"
 }
 ```

@@ -74,7 +74,7 @@ def doc_parser(
                         'Headers.Age': headers.get('Age', ''),
                         'Headers.Last-Modified': headers.get('Last-Modified', ''),
                         'Headers.Content-Length': headers.get('Content-Length', ''),
-                        'Headers.content-type': headers.get('Content-Type', ''),
+                        'Headers.Content-Type': headers.get('Content-Type', ''),
                         }))
                 
                 update_storage_status(num_file, files_size, doc_file_path)

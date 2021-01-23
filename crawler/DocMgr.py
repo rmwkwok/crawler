@@ -2,16 +2,16 @@ import os
 import xml
 import json
 
-from . import constants
-from .util import MultiProcesser, Q, dequeuer, queuer, dequeue_once, queue_flusher
-from .Logger import format_log
-from .constants import CrawlResult as CR
-
 from bs4 import BeautifulSoup
 from ctypes import c_int64, c_longdouble
 from datetime import datetime as dt
 from urllib.parse import urljoin, urldefrag
 from multiprocessing import Value, Manager
+
+from . import constants
+from .util import MultiProcesser, Q, dequeuer, queuer, dequeue_once, queue_flusher
+from .Logger import format_log
+from .constants import CrawlResult as CR
 
 def doc_parser(
     qcount, queue, pid, active,
@@ -24,7 +24,7 @@ def doc_parser(
     log_q = (log_qcount, log_queue, pid)
     doc_output_q = (output_qcount, output_queue, pid + 'DocMgrOutput')
     
-    for result, url, doc in dequeuer(*doc_q, active):
+    for result, url, doc, headers in dequeuer(*doc_q, active):
         if result == CR.SUCCESS:
             try:
                 doc = BeautifulSoup(doc, features='lxml')
@@ -38,20 +38,26 @@ def doc_parser(
                 creation_time = dt.now()
                 file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
                 file_path = os.path.join(STORAGE_FOLDER, file_name)
+                headers = json.loads(headers)
                 
                 with open(file_path, 'w') as f:
                     f.write(json.dumps({
                         'metadata': {
+                            'parent_url': url.parent_url_str,
                             'url': url.url_str,
                             'url_depth': url.depth,
                             'anchor_text': url.anchor_text,
-                            'creation_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            'crawl_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
                             'title': ','.join(x.text for x in doc.findAll('title')),
+                            'Headers.Age': headers.get('Age', ''),
+                            'Headers.Last-Modified': headers.get('Last-Modified', ''),
+                            'Headers.Content-Length': headers.get('Content-Length', ''),
+                            'Headers': headers,
                         },
                         'document': str(doc),
                     }))
                 update_storage_status(num_file, files_size, file_path)
-                    
+                
                 # extract links
                 for a in doc.find_all('a'):
                     if a.get('href'):

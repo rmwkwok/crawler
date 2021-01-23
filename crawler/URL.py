@@ -13,8 +13,10 @@ class URL:
         
         if parent_URL:
             self._depth = parent_URL._depth + 1 #depth relative to seed
+            self._parent_url_str = parent_URL._url_str
         else:
             self._depth = 0
+            self._parent_url_str = ''
         
     def __str__(self):
         return str((self._idx,
@@ -42,6 +44,10 @@ class URL:
     @property
     def url_str(self):
         return self._url_str
+    
+    @property
+    def parent_url_str(self):
+        return self._parent_url_str
     
     @property
     def num_retry(self):

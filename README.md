@@ -86,12 +86,16 @@ optional arguments:
 ```
 {
     "metadata": {
-        "url": "https://en.wikipedia.org/wiki/Structured_prediction", 
+        "parent_url": "https://en.wikipedia.org/wiki/Machine_learning",
+        "url": "https://en.wikipedia.org/wiki/Data_mining", 
         "url_depth": 1, 
-        "anchor_text": "Structured prediction", 
-        "creation_time": "2021-01-22 15:17:49", 
-        "title": "Structured prediction - Wikipedia"
-        }, 
-    "document": '''<!DOCTYPE html>\n<html class=\"client-nojs\" dir=\"ltr\" lang=\"en\">\n<head>\n ...''',
+        "anchor_text": "data mining", 
+        "crawl_time": "2021-01-23 11:22:12", 
+        "title": "Data mining - Wikipedia", 
+        "Headers.Age": "1146", 
+        "Headers.Last-Modified": "Sat, 23 Jan 2021 01:41:51 GMT", 
+        "Headers.Content-Length": "48350", 
+        "Headers": {...}, 
+    "document": "<!DOCTYPE html>\n<html class=\"client-nojs\" dir=\"ltr\" lang=\"en\">\n<head>\n ...",
 }
 ```

@@ -7,6 +7,7 @@ from ctypes import c_int64, c_longdouble
 from datetime import datetime as dt
 from urllib.parse import urljoin, urldefrag
 from multiprocessing import Value, Manager
+from requests.structures import CaseInsensitiveDict
 
 from . import constants
 from .util import MultiProcesser, Q, dequeuer, queuer, dequeue_once, queue_flusher
@@ -56,7 +57,7 @@ def doc_parser(
                 file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
                 doc_file_path = os.path.join(STORAGE_FOLDER, file_name)
                 metadata_file_path = os.path.join(STORAGE_FOLDER, STORAGE_METADATA_FOLDER, file_name+'.json')
-                headers = json.loads(headers)
+                headers = CaseInsensitiveDict(json.loads(headers))
                 
                 with open(doc_file_path, 'w') as f:
                     f.write(str(doc))
@@ -73,7 +74,7 @@ def doc_parser(
                         'Headers.Age': headers.get('Age', ''),
                         'Headers.Last-Modified': headers.get('Last-Modified', ''),
                         'Headers.Content-Length': headers.get('Content-Length', ''),
-                        'Headers': headers,
+                        'Headers.content-type': headers.get('Content-Type', ''),
                         }))
                 
                 update_storage_status(num_file, files_size, doc_file_path)

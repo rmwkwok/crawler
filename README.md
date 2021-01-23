@@ -37,8 +37,21 @@ optional arguments:
                         Storage limit in MB excluding metadata, above which
                         the crawlers stop (Default: 300)
   --url_allowed_domain URL_ALLOWED_DOMAIN [URL_ALLOWED_DOMAIN ...]
-                        A list of domain allowable, separated by space
+                        A list of domain allowable, separated by space (regex)
                         (Default: en.wikipedia.org)
+  --url_disallowed_url URL_DISALLOWED_URL [URL_DISALLOWED_URL ...]
+                        A list of URLs disallowed, separated by space (regex)
+                        (Default:
+                        en.wikipedia.org/wiki/Artificial_Intelligence:
+                        en.wikipedia.org/wiki/Book:
+                        en.wikipedia.org/wiki/Category:
+                        en.wikipedia.org/wiki/File:
+                        en.wikipedia.org/wiki/Help:
+                        en.wikipedia.org/wiki/Portal:
+                        en.wikipedia.org/wiki/Talk:
+                        en.wikipedia.org/wiki/Template:
+                        en.wikipedia.org/wiki/Template_talk:
+                        en.wikipedia.org/wiki/Wikipedia:)
   --url_max_depth URL_MAX_DEPTH
                         Maximum allowable depth relative to seed (Default: 50)
   --url_max_length URL_MAX_LENGTH

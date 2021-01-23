@@ -9,6 +9,18 @@ class Config:
     URL_RETRY_WAIT_SECOND = 60
     URL_PATTERN = r'https?://.*\..*/?.*'
     URL_ALLOWED_DOMAIN = ['en.wikipedia.org']
+    URL_DISALLOWED_URL = [
+        'en.wikipedia.org/wiki/Artificial_Intelligence:',
+        'en.wikipedia.org/wiki/Book:',
+        'en.wikipedia.org/wiki/Category:',
+        'en.wikipedia.org/wiki/File:',
+        'en.wikipedia.org/wiki/Help:',
+        'en.wikipedia.org/wiki/Portal:',
+        'en.wikipedia.org/wiki/Talk:',
+        'en.wikipedia.org/wiki/Template:',
+        'en.wikipedia.org/wiki/Template_talk:',
+        'en.wikipedia.org/wiki/Wikipedia:',
+    ]
 
     MAX_NUMBER_OF_CRAWLERS = 8
     MAX_NUMBER_OF_DOC_PARSERS = 8
@@ -31,7 +43,8 @@ config_desc = {
     'URL_RETRY_LIMIT': 'Maximum allowable number of retrial',
     'URL_RETRY_WAIT_SECOND': 'Number of seconds to wait between two retrials',
     'URL_PATTERN': 'URL pattern in regular expression',
-    'URL_ALLOWED_DOMAIN': 'A list of domain allowable, separated by space',
+    'URL_ALLOWED_DOMAIN': 'A list of domain allowable, separated by space (regex)',
+    'URL_DISALLOWED_URL': 'A list of URLs disallowed, separated by space (regex)',
     
     'MAX_NUMBER_OF_CRAWLERS': 'Number of multi-threaded crawlers',
     'MAX_NUMBER_OF_DOC_PARSERS': 'Number of multi-threaded document parsers',

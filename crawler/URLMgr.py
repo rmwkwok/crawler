@@ -63,6 +63,14 @@ class URLMgr:
         else:
             self._logger.add(constants.WARNING, url_str, ':Not allowed domain')
             return False
+    
+    def check_is_URL_not_disallowed(self, url_str):
+        pattern = '(%s)'%('|'.join(self._config.URL_DISALLOWED_URL))
+        if re.search(pattern, url_str):
+            self._logger.add(constants.WARNING, url_str, ':Not allowed URL')
+            return False
+        else:
+            return True
             
     def check_is_new_url(self, url):
         if url.idx in self._idxs_set:
@@ -96,6 +104,7 @@ class URLMgr:
             
             if self.check_is_new_url_str(url_str)\
                 and self.check_is_valid_domain(url_str)\
+                and self.check_is_URL_not_disallowed(url_str)\
                 and self.check_is_url_str_valid(url_str)\
                 and self.check_robot_can_fetch(url_str)\
                 and self.check_is_URL_valid(url):

@@ -34,8 +34,8 @@ optional arguments:
                         Storage limit in number of files, above which the
                         crawlers stop (Default: 100000)
   --storage_size_limit_mb STORAGE_SIZE_LIMIT_MB
-                        Storage limit in MB, above which the crawlers stop
-                        (Default: 300)
+                        Storage limit in MB excluding metadata, above which
+                        the crawlers stop (Default: 300)
   --url_allowed_domain URL_ALLOWED_DOMAIN [URL_ALLOWED_DOMAIN ...]
                         A list of domain allowable, separated by space
                         (Default: en.wikipedia.org)
@@ -82,20 +82,21 @@ optional arguments:
 ### Output
 - a log file under ```LOG_FOLDER```
 - crawled docs under ```STORAGE_FOLDER```
-- a crawled doc is a json of the following format:
+- metadata for crawled docs under ```STORAGE_FOLDER```\metadata
+- a crawled doc is a file of strings
+- a metadata file is a json of the following format:
 ```
 {
-    "metadata": {
-        "parent_url": "https://en.wikipedia.org/wiki/Machine_learning",
-        "url": "https://en.wikipedia.org/wiki/Data_mining", 
-        "url_depth": 1, 
-        "anchor_text": "data mining", 
-        "crawl_time": "2021-01-23 11:22:12", 
-        "title": "Data mining - Wikipedia", 
-        "Headers.Age": "1146", 
-        "Headers.Last-Modified": "Sat, 23 Jan 2021 01:41:51 GMT", 
-        "Headers.Content-Length": "48350", 
-        "Headers": {...}, 
-    "document": "<!DOCTYPE html>\n<html class=\"client-nojs\" dir=\"ltr\" lang=\"en\">\n<head>\n ...",
+    "parent_url": "https://en.wikipedia.org/wiki/Machine_learning",
+    "url": "https://en.wikipedia.org/wiki/Data_mining", 
+    "child_url": [[url, anchor_text], [url, anchor_text], ...],
+    "url_depth": 1, 
+    "anchor_text": "data mining", 
+    "crawl_time": "2021-01-23 11:22:12", 
+    "title": "Data mining - Wikipedia", 
+    "Headers.Age": "1146", 
+    "Headers.Last-Modified": "Sat, 23 Jan 2021 01:41:51 GMT", 
+    "Headers.Content-Length": "48350", 
+    "Headers": {...}, 
 }
 ```

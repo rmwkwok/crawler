@@ -13,6 +13,8 @@ from .util import MultiProcesser, Q, dequeuer, queuer, dequeue_once, queue_flush
 from .Logger import format_log
 from .constants import CrawlResult as CR
 
+STORAGE_METADATA_FOLDER = 'metadata'
+
 def doc_parser(
     qcount, queue, pid, active,
     output_queue, output_qcount, 
@@ -34,34 +36,12 @@ def doc_parser(
                 continue
 
             else:
-                # write file
-                creation_time = dt.now()
-                file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
-                file_path = os.path.join(STORAGE_FOLDER, file_name)
-                headers = json.loads(headers)
-                
-                with open(file_path, 'w') as f:
-                    f.write(json.dumps({
-                        'metadata': {
-                            'parent_url': url.parent_url_str,
-                            'url': url.url_str,
-                            'url_depth': url.depth,
-                            'anchor_text': url.anchor_text,
-                            'crawl_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
-                            'title': ','.join(x.text for x in doc.findAll('title')),
-                            'Headers.Age': headers.get('Age', ''),
-                            'Headers.Last-Modified': headers.get('Last-Modified', ''),
-                            'Headers.Content-Length': headers.get('Content-Length', ''),
-                            'Headers': headers,
-                        },
-                        'document': str(doc),
-                    }))
-                update_storage_status(num_file, files_size, file_path)
-                
                 # extract links
+                child_url_strs = []
                 for a in doc.find_all('a'):
                     if a.get('href'):
                         url_str = urldefrag(urljoin(url.url_str, a.get('href'))).url
+                        child_url_strs.append([url_str, a.text])
                         if url_str not in seen_url_str:
                             seen_url_str[url_str] = None
                             queuer(*doc_output_q, (
@@ -70,6 +50,34 @@ def doc_parser(
                                 url_str,
                                 a.text, 
                             ))
+
+                # write file
+                creation_time = dt.now()
+                file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
+                doc_file_path = os.path.join(STORAGE_FOLDER, file_name)
+                metadata_file_path = os.path.join(STORAGE_FOLDER, STORAGE_METADATA_FOLDER, file_name+'.json')
+                headers = json.loads(headers)
+                
+                with open(doc_file_path, 'w') as f:
+                    f.write(str(doc))
+                
+                with open(metadata_file_path, 'w') as f:
+                    f.write(json.dumps({
+                        'parent_url': url.parent_url_str,
+                        'url': url.url_str,
+                        'child_urls': child_url_strs,
+                        'url_depth': url.depth,
+                        'anchor_text': url.anchor_text,
+                        'crawl_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        'title': ','.join(x.text for x in doc.findAll('title')),
+                        'Headers.Age': headers.get('Age', ''),
+                        'Headers.Last-Modified': headers.get('Last-Modified', ''),
+                        'Headers.Content-Length': headers.get('Content-Length', ''),
+                        'Headers': headers,
+                        }))
+                
+                update_storage_status(num_file, files_size, doc_file_path)
+                
         else:
             queuer(*doc_output_q, (result, url, None, None))
 
@@ -92,7 +100,7 @@ def init_storage_status(num_file, files_size, folder):
 
     for file in os.listdir(folder):
         path = os.path.join(folder, file)
-        if not os.path.islink(path):
+        if not os.path.islink(path) and not os.path.isdir(path):
             update_storage_status(num_file, files_size, path)
 
 class DocMgr(MultiProcesser):
@@ -107,6 +115,7 @@ class DocMgr(MultiProcesser):
         self._files_size = Value(c_longdouble, 0.)
         
         create_storage_folder(self._config.STORAGE_FOLDER)
+        create_storage_folder(os.path.join(self._config.STORAGE_FOLDER, STORAGE_METADATA_FOLDER))
         init_storage_status(self._num_file, self._files_size, self._config.STORAGE_FOLDER)
         self.get_storage_status()
     

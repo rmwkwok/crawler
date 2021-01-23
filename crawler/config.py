@@ -37,7 +37,7 @@ config_desc = {
     'MAX_NUMBER_OF_DOC_PARSERS': 'Number of multi-threaded document parsers',
     
     'STORAGE_FOLDER': 'Folder path for storage',
-    'STORAGE_SIZE_LIMIT_MB': 'Storage limit in MB, above which the crawlers stop',
+    'STORAGE_SIZE_LIMIT_MB': 'Storage limit in MB excluding metadata, above which the crawlers stop',
     'STORAGE_NUM_DOC_LIMIT': 'Storage limit in number of files, above which the crawlers stop',
     
     'LOG_SHOW_LOG_LEVEL': '0: Show all logs, 1: Show only Info and FATAL, 2: Show only FATAL, 3: Show progress bar',

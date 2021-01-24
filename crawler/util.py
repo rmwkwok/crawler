@@ -20,7 +20,7 @@ class Q:
         
     def __del__(self):
         queue_flusher(self._qcount, self._queue, self._name)
-        print('Flushed', self._name, ' '*20)
+        print('Flushed', self._name, self._qcount.value, 'items remained', ' '*20)
         
     @property
     def get_queue_size(self):
@@ -102,11 +102,14 @@ def dequeue_once(qcount, queue, pid):
         return obj
 
 def queue_flusher(qcount, queue, pid):
-    REPEAT = 4
-    print('flushing', REPEAT, pid, qcount.value, ' '*20, end='\r')
-    while REPEAT or (qcount.value > 0):
-        if dequeue_once(qcount, queue, pid) is None:
-            if qcount.value == 0:
-                time.sleep(.5)
-                REPEAT -= 1
-                print('flushing', REPEAT, pid, qcount.value, ' '*20, end='\r')
+    i = REPEAT = 4
+    while i > 0:
+        i -= 1
+        print('flushing', REPEAT, pid, qcount.value, ' '*20, end='\r')
+        for _ in range(1000):
+            if dequeue_once(qcount, queue, pid) is None:
+                break
+            else:
+                i = REPEAT
+        time.sleep(.5)
+

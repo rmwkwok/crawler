@@ -1,2 +1,5 @@
-beautifulsoup4==4.9.3
 lxml==4.6.1
+numpy==1.19.4
+requests==2.18.4
+trafilatura==0.7.0
+beautifulsoup4==4.9.3

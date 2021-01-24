@@ -1,6 +1,7 @@
 import os
 import xml
 import json
+import trafilatura
 
 from bs4 import BeautifulSoup
 from ctypes import c_int64, c_longdouble
@@ -21,7 +22,7 @@ def doc_parser(
     output_queue, output_qcount, 
     log_queue, log_qcount, 
     num_file, files_size, 
-    seen_url_str, STORAGE_FOLDER,
+    seen_url_str, fingerprint_set, STORAGE_FOLDER,
 ):
     doc_q = (qcount, queue, pid)
     log_q = (log_qcount, log_queue, pid)
@@ -37,6 +38,24 @@ def doc_parser(
                 continue
 
             else:
+                # write doc file
+                headers = CaseInsensitiveDict(json.loads(headers))
+                extracted = json.loads(trafilatura.extract(str(doc), output_format='json'))
+                crawl_time = dt.now()
+                fingerprint = extracted['fingerprint']
+                
+                file_name = '%d_%s'%(dt.timestamp(crawl_time), hash(url.url_str))
+                doc_file_path = os.path.join(STORAGE_FOLDER, file_name)
+                metadata_file_path = os.path.join(STORAGE_FOLDER, STORAGE_METADATA_FOLDER, file_name+'.json')
+                
+                if fingerprint in fingerprint_set:
+                    queuer(*log_q, format_log(constants.INFO, url.url_str, 'fingerprint repeated'))
+                    continue
+                else:
+                    fingerprint_set[fingerprint] = None
+                    with open(doc_file_path, 'w') as f:
+                        f.write(extracted.get('raw-text', extracted.get('text', str(doc))))
+                
                 # extract links
                 child_url_strs = []
                 for a in doc.find_all('a'):
@@ -51,16 +70,11 @@ def doc_parser(
                                 url_str,
                                 a.text, 
                             ))
-
-                # write file
-                creation_time = dt.now()
-                file_name = '%d_%s'%(dt.timestamp(creation_time), hash(url.url_str))
-                doc_file_path = os.path.join(STORAGE_FOLDER, file_name)
-                metadata_file_path = os.path.join(STORAGE_FOLDER, STORAGE_METADATA_FOLDER, file_name+'.json')
-                headers = CaseInsensitiveDict(json.loads(headers))
                 
-                with open(doc_file_path, 'w') as f:
-                    f.write(str(doc))
+                # write metadata file
+                title = extracted.get('title', None)
+                if title is None or str(title) == '':
+                    title = ','.join(x.text for x in doc.findAll('title'))
                 
                 with open(metadata_file_path, 'w') as f:
                     f.write(json.dumps({
@@ -69,8 +83,9 @@ def doc_parser(
                         'child_urls': child_url_strs,
                         'url_depth': url.depth,
                         'anchor_text': url.anchor_text,
-                        'crawl_time': creation_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        'title': ','.join(x.text for x in doc.findAll('title')),
+                        'crawl_time': crawl_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        'title': title,
+                        'fingerprint': fingerprint,
                         'Headers.Age': headers.get('Age', ''),
                         'Headers.Last-Modified': headers.get('Last-Modified', ''),
                         'Headers.Content-Length': headers.get('Content-Length', ''),
@@ -111,6 +126,7 @@ class DocMgr(MultiProcesser):
         self._logger = logger
         self._manager = Manager()
         self._seen_url_str = self._manager.dict()
+        self._fingerprint_set = self._manager.dict()
         self._output_q = Q('DocMgrOutput')
         self._num_file = Value(c_int64, 0)
         self._files_size = Value(c_longdouble, 0.)
@@ -131,6 +147,7 @@ class DocMgr(MultiProcesser):
                                       log_queue=self._logger.queue,
                                       log_qcount=self._logger.qcount,
                                       seen_url_str=self._seen_url_str,
+                                      fingerprint_set=self._fingerprint_set,
                                       STORAGE_FOLDER=self._config.STORAGE_FOLDER,
                                       ))
 

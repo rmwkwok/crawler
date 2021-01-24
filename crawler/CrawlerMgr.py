@@ -1,5 +1,6 @@
 import re
 import json
+import time
 import requests
 from datetime import datetime as dt
 
@@ -12,13 +13,18 @@ def crawler(
     qcount, queue, pid, active, 
     doc_queue, doc_qcount, 
     log_queue, log_qcount, 
-    URL_RETRY_HTTP_CODES,
+    URL_RETRY_HTTP_CODES, BUFFER_SIZE_FOR_CRAWLED_DOC,
 ):
     log_q = (log_qcount, log_queue, pid)
     doc_q = (doc_qcount, doc_queue, pid)
     crawler_q = (qcount, queue, pid)
     
     for url in dequeuer(*crawler_q, active):
+        while doc_qcount.value > BUFFER_SIZE_FOR_CRAWLED_DOC:
+            time.sleep(0.5)
+            if not active:
+                continue
+        
         try:
             start_time = dt.now()
             doc = requests.get(url.url_str)
@@ -60,12 +66,14 @@ class CrawlerMgr(MultiProcesser):
                                       doc_queue=self._doc_mgr.queue,
                                       doc_qcount=self._doc_mgr.qcount,
                                       URL_RETRY_HTTP_CODES=self._config.URL_RETRY_HTTP_CODES,
+                                      BUFFER_SIZE_FOR_CRAWLED_DOC=self._config.BUFFER_SIZE_FOR_CRAWLED_DOC,
                                       ))
             
     def stop_crawlers(self):
         self._stop_all_processes()
     
     def add_to_queue(self, url):
-        self._add_to_queue(url)
+        if self._qcount.value < self._config.BUFFER_SIZE_FOR_CRAWLING_URL:
+            self._add_to_queue(url)
         
 

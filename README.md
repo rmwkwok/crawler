@@ -17,6 +17,16 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --buffer_size_for_crawled_doc BUFFER_SIZE_FOR_CRAWLED_DOC
+                        Buffer size of for documents in terms of number of
+                        documents. If the buffer is too large and the doc
+                        parsers are not fast enough to digest them, there can
+                        be out-of-memory problem. When buffer is full,
+                        crawlers pause crawling (Default: 100)
+  --buffer_size_for_crawling_url BUFFER_SIZE_FOR_CRAWLING_URL
+                        Number of allowable URLs in the crawlers' queue,
+                        exceeding which any new URLs will be discarded
+                        (Default: 200000)
   --log_folder LOG_FOLDER
                         Folder path for logs (Default: log)
   --log_save_every_second LOG_SAVE_EVERY_SECOND
@@ -79,10 +89,10 @@ optional arguments:
 - Crawlers process the URLs in FIFO manner
 - When ```LOG_SHOW_LOG_LEVEL```=3, it shows a progress bar like this:
 
-> 0d  170s URL:200|30000 Crawler:8/8 File: 100.0MB(33.3%)|   700(0.7%)
+> 0d  170s URL:200|30000|100 Crawler:8/8 File: 100.0MB(33.3%)|   700(0.7%)
 >> **0d  170s**: elapsed time
 >>
->> **URL:200|30000**: URLs pending and to be crawled. 
+>> **URL:200|30000|100**: URLs pending/ready to be crawled/crawled and waiting to be saved. 
 >>
 >> A URL will be pending for ```URL_RETRY_WAIT_SECOND``` seconds if it was refused (```URL_RETRY_HTTP_CODES```)
 >>
@@ -96,20 +106,23 @@ optional arguments:
 - a log file under ```LOG_FOLDER```
 - crawled docs under ```STORAGE_FOLDER```
 - metadata for crawled docs under ```STORAGE_FOLDER```\metadata
+- converted metadata for crawled docs under ```STORAGE_FOLDER```\converted_metadata
 - a crawled doc is a file of strings
-- a metadata file is a json of the following format:
+- a converted metadata file is a json of the following format:
 ```
 {
     "parent_url": "https://en.wikipedia.org/wiki/Machine_learning",
     "url": "https://en.wikipedia.org/wiki/Data_mining", 
-    "child_url": [[url, anchor_text], [url, anchor_text], ...],
     "url_depth": 1, 
-    "anchor_text": "data mining", 
+    "anchor_text": ["data mining", ...], 
     "crawl_time": "2021-01-23 11:22:12", 
     "title": "Data mining - Wikipedia", 
+    "fingerprint": "ezbobQkm9v2BA9FRZQPfMwRt7bk=", 
     "Headers.Age": "1146", 
     "Headers.Last-Modified": "Sat, 23 Jan 2021 01:41:51 GMT", 
     "Headers.Content-Length": "48350", 
-    "Headers.Content-Type": "text/html; charset=UTF-8"
+    "Headers.Content-Type": "text/html; charset=UTF-8",
+    "number_of_links_from_which": 579,
+    "number_of_links_to_which": 1158,
 }
 ```

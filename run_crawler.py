@@ -2,6 +2,8 @@ import time
 import json
 import argparse
 
+from post_process import post_process
+
 from crawler.config import config_desc, Config as config
 from crawler.Logger import Logger
 from crawler.DocMgr import DocMgr
@@ -84,3 +86,4 @@ def main():
     
 if __name__ == '__main__':
     main()
+    post_process(config.STORAGE_FOLDER)

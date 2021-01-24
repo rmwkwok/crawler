@@ -1,3 +1,4 @@
 log
 storage
+__pycache__
 crawler/__pycache__

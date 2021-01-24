@@ -32,6 +32,9 @@ class Config:
     LOG_SHOW_LOG_LEVEL = 3 #1
     LOG_FOLDER = 'log'
     LOG_SAVE_EVERY_SECOND = 30
+    
+    BUFFER_SIZE_FOR_CRAWLED_DOC = 100
+    BUFFER_SIZE_FOR_CRAWLING_URL = 200000
 
 config_desc = {
     'SEED_TARGETS_LIST': 'A file containing seed URLs one in each line',
@@ -56,5 +59,8 @@ config_desc = {
     'LOG_SHOW_LOG_LEVEL': '0: Show all logs, 1: Show only Info and FATAL, 2: Show only FATAL, 3: Show progress bar',
     'LOG_FOLDER': 'Folder path for logs',
     'LOG_SAVE_EVERY_SECOND': 'Interval of saving logs to disk',
+    
+    'BUFFER_SIZE_FOR_CRAWLED_DOC': 'Buffer size of for documents in terms of number of documents. If the buffer is too large and the doc parsers are not fast enough to digest them, there can be out-of-memory problem. When buffer is full, crawlers pause crawling',
+    'BUFFER_SIZE_FOR_CRAWLING_URL': '''Number of allowable URLs in the crawlers' queue, exceeding which any new URLs will be discarded''',
 }
     

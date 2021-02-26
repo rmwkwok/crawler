@@ -32,6 +32,7 @@ def doc_parser(
         if result == CR.SUCCESS:
             try:
                 doc = BeautifulSoup(doc, features='lxml')
+                doc.find('div', class_="reflist columns references-column-width").decompose()
 
             except Exception as e:
                 queuer(*log_q, format_log(constants.WARNING, url.url_str, ':%s'%e))

@@ -4,6 +4,22 @@ import json
 import shutil
 import numpy as np
 
+def page_rank(am, damping=0.85, n_iterations=100, verbose=False):
+    n = am.shape[0] # # nodes
+    pr = np.ones(n)
+    for i in range(n_iterations):
+        _pr = (1-damping)*np.ones(n) + damping * am @ pr
+        n_changing = (np.abs(_pr - pr) > 0.01).sum()
+        pr = _pr
+        
+        if verbose:
+            print('Round {: >2d}'.format(i), pr.round(2), n_changing)
+        
+        if n_changing == 0:
+            break
+
+    return pr/n
+
 def get_adjacency_matrix(url_relations):
     n = len(url_relations) # # nodes
     
@@ -80,11 +96,11 @@ def post_process(folder, verbose=False):
     am_to = (am>0).sum(axis=1)
     am_from = (am>0).sum(axis=0)
 
-#     # page rank
-#     pr = page_rank(am, verbose=verbose)
+    # page rank
+    pr = page_rank(am, verbose=verbose)
 
     new_meta_data = {url: {
-#         'page_rank_score': float(pr[index]),
+        'page_rank_score': float(pr[index]),
         'anchor_text': url_anchortext[url],
         'number_of_links_from_which': int(am_from[index]),
         'number_of_links_to_which': int(am_to[index]),

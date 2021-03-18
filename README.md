@@ -1,5 +1,11 @@
 # Crawler (development version)
 
+### Introduction
+It crawls webpage, extracts main content, and extracts URLs for more crawling. The main content extraction happens in the document parsers which are running in multi-processes as the extraction is CPU Bound. While extraction could not catch up with the speed of page crawling, the later would be paused until the extraction queue becomes low again. A series of URL checking conditions are implemented to decide which URL should be crawled next and which should not be crawled. The crawling is generally breath-first, but can be modified to make it depth-first, or somewhere in between. Main content together with metadata (in JSON) would be stored separately as files, and as it saves enough main contents, all queues would be cleared, processes halted, before the system is terminated.
+
+### System schematics
+![alt text](https://github.com/rmwkwok/Crawler/blob/cfa2b9c2902a5d19e333887e6edf9802ff1b1ff2/architecture.png)
+
 ### Usage example
 python3 run_crawler.py seed_targets_list.txt
 
